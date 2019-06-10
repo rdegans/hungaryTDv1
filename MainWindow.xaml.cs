@@ -32,6 +32,7 @@ namespace hungaryTDv1
         public enum GameState {play, store, test};
         public GameState gameState;
         public Polygon trackHit = new Polygon();
+        StreamWriter sw;
         public MainWindow()
         {
             InitializeComponent();
@@ -40,7 +41,6 @@ namespace hungaryTDv1
             btnStart.Content = "start";
             btnStart.Click += BtnStart_Click;
             cBackground.Children.Add(btnStart);
-            StreamWriter sw;
             try
             {
                 sw = new StreamWriter("line1.txt");
@@ -176,10 +176,10 @@ namespace hungaryTDv1
             }
             else if (gameState == GameState.test)
             {
-                /*MouseButtonState pmbs = MouseButtonState.Released;
+                MouseButtonState pmbs = MouseButtonState.Released;
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    Point temp = Mouse.GetPosition(canvas);
+                    Point temp = Mouse.GetPosition(cBackground);
                     try
                     {
                         sw.WriteLine(temp.ToString());
@@ -192,7 +192,7 @@ namespace hungaryTDv1
                 else
                 {
                     pmbs = Mouse.LeftButton;
-                }*/
+                }
             }
             else if (gameState == GameState.play)
             {
@@ -261,48 +261,56 @@ namespace hungaryTDv1
 
         private void TempTwrBtn_Click(object sender, RoutedEventArgs e)
         {
-            gameState = GameState.test;
-            /*sw = new StreamWriter("tankBox.txt");
-            sw.Close();*/
-            StreamReader sr = new StreamReader("tankBox.txt");
-            List<Point> points = new List<Point>();
-            while (!sr.EndOfStream)
+            try
             {
-                string currentLine = sr.ReadLine();
-                double xPosition, yPosition;
-                double.TryParse(currentLine.Split(',')[0], out xPosition);
-                double.TryParse(currentLine.Split(',')[1], out yPosition);
-                Point point = new Point(xPosition, yPosition);
-                points.Add(point);
+                gameState = GameState.test;
+                /*sw = new StreamWriter("tankBox.txt");
+                sw.Close();*/
+                StreamReader sr = new StreamReader("tankBox.txt");
+                List<Point> points = new List<Point>();
+                while (!sr.EndOfStream)
+                {
+                    string currentLine = sr.ReadLine();
+                    double xPosition, yPosition;
+                    double.TryParse(currentLine.Split(',')[0], out xPosition);
+                    double.TryParse(currentLine.Split(',')[1], out yPosition);
+                    Point point = new Point(xPosition, yPosition);
+                    points.Add(point);
+                }
+                sr.Close();
+                PointCollection myPointCollection = new PointCollection();
+                for (int i = 0; i < points.Count; i++)
+                {
+                    myPointCollection.Add(points[i]);
+                }
+                trackHit.Points = myPointCollection;
+                trackHit.Stroke = Brushes.Red;
+                trackHit.Fill = Brushes.Blue;
+                cObstacles.Children.Add(trackHit);
+                sr = new StreamReader("line1.txt");
+                myPointCollection = new PointCollection();
+                while (!sr.EndOfStream)
+                {
+                    string currentLine = sr.ReadLine();
+                    double xPosition, yPosition;
+                    double.TryParse(currentLine.Split(',')[0], out xPosition);
+                    double.TryParse(currentLine.Split(',')[1], out yPosition);
+                    Point point = new Point(xPosition, yPosition);
+                    myPointCollection.Add(point);
+                }
+                sr.Close();
+                Polyline test = new Polyline();
+                test.Points = myPointCollection;
+                test.Stroke = Brushes.Red;
+                test.StrokeThickness = 3;
+                //test.Fill = Brushes.Blue;
+                cBackground.Children.Add(test);
+                sw = new StreamWriter("tankBox.txt");
             }
-            sr.Close();
-            PointCollection myPointCollection = new PointCollection();
-            for (int i = 0; i < points.Count; i++)
+            catch
             {
-                myPointCollection.Add(points[i]);
+                sw.Close();
             }
-            trackHit.Points = myPointCollection;
-            trackHit.Stroke = Brushes.Red;
-            trackHit.Fill = Brushes.Blue;
-            cObstacles.Children.Add(trackHit);
-            sr = new StreamReader("line1.txt");
-            myPointCollection = new PointCollection();
-            while (!sr.EndOfStream)
-            {
-                string currentLine = sr.ReadLine();
-                double xPosition, yPosition;
-                double.TryParse(currentLine.Split(',')[0], out xPosition);
-                double.TryParse(currentLine.Split(',')[1], out yPosition);
-                Point point = new Point(xPosition, yPosition);
-                myPointCollection.Add(point);
-            }
-            sr.Close();
-            Polyline test = new Polyline();
-            test.Points = myPointCollection;
-            test.Stroke = Brushes.Red;
-            test.StrokeThickness = 3;
-            //test.Fill = Brushes.Blue;
-            cBackground.Children.Add(test);
         }
         private void iconsClick(object sender, RoutedEventArgs e)
         {
