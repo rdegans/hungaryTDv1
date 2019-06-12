@@ -29,10 +29,18 @@ namespace hungaryTDv1
         Button btnStart = new Button();
         public ImageBrush[] towerFill = new ImageBrush[4];
         System.Windows.Threading.DispatcherTimer gameTimer = new System.Windows.Threading.DispatcherTimer();
-        public enum GameState {play, store, test};
         public GameState gameState;
+        public enum GameState {play, store, test};
+        public TowerType towerType;
+        public enum TowerType {normal, police, family, tank}
+        public EnemyType enemyType;
+        public enum EnemyType {apple, pizza, donut, hamburger, fries}
+        public List<Enemy> enemies = new List<Enemy>();
         public Polygon trackHit = new Polygon();
+        public Point[] track = new Point[1450];
+        public int[] positions = new int[1450];
         StreamWriter sw;
+        StreamReader sr;
         public MainWindow()
         {
             InitializeComponent();
@@ -41,101 +49,28 @@ namespace hungaryTDv1
             btnStart.Content = "start";
             btnStart.Click += BtnStart_Click;
             cBackground.Children.Add(btnStart);
-            try
+            for (int i = 0; i < positions.Length; i++)
             {
-                sw = new StreamWriter("line1.txt");
+                positions[i] = -1;
             }
-            catch (FileNotFoundException)
+            sr = new StreamReader("trackLine.txt");
+            int counter = 0;
+            while (!sr.EndOfStream)
             {
-                sw = new StreamWriter("line1.txt");
+                string currentLine = sr.ReadLine();
+                double xPosition, yPosition;
+                double.TryParse(currentLine.Split(',')[0], out xPosition);
+                double.TryParse(currentLine.Split(',')[1], out yPosition);
+                Point point = new Point(xPosition, yPosition);
+                track[counter] = point;
+                counter++;
             }
-            for (int i = 0; i < 175; i+=1)
-            {
-                sw.WriteLine(i + ",275");
-            }
-            for (int i = 275; i > 205; i-=1)
-            {
-                sw.WriteLine("175," + i);
-            }
-            for (int i = 175; i < 315; i += 1)
-            {
-                sw.WriteLine(i + ",205");
-            }
-            for (int i = 205; i < 490; i += 1)
-            {
-                sw.WriteLine("315," + i);
-            }
-            for (int i = 315; i < 525; i += 1)
-            {
-                sw.WriteLine(i + ",490");
-            }
-            for (int i = 490; i > 275; i-=1)
-            {
-                sw.WriteLine("525," + i);
-            }
-            for (int i = 525; i < 675; i += 1)
-            {
-                sw.WriteLine(i + ",275");
-            }
-            for (int i = 275; i < 345; i++)
-            {
-                sw.WriteLine("675," + i);
-            }
-            for (int i = 675; i < 810; i += 1)
-            {
-                sw.WriteLine(i + ",345");
-            }
-            sw.Close();
+            sr.Close();
+            gameState = GameState.play;
         }
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
-            /*
-             * track:
-0,240
-140,240
-140,170
-350,170
-350,455
-490,455
-490,240
-700,240
-700,310
-750,310
-750,210
-845,210
-845,380
-820,410
-730,380
-630,380
-630,310
-560,310
-560,525
-280,525
-280,240
-210,240
-210,310
-0,310
-           * menu:
-0,120
-845,120
-845,650
-1125,650
-1125,0
-0,0
-0,120
-            * polyline
-0,275
-175,275
-175,205
-315,205
-315,490
-525,490
-525,275
-675,275
-675,345
-810,345
-             */
             if (gameState == GameState.store)
             {
                // sw.Close();
@@ -176,7 +111,7 @@ namespace hungaryTDv1
             }
             else if (gameState == GameState.test)
             {
-                MouseButtonState pmbs = MouseButtonState.Released;
+                /*MouseButtonState pmbs = MouseButtonState.Released;
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point temp = Mouse.GetPosition(cBackground);
@@ -192,18 +127,22 @@ namespace hungaryTDv1
                 else
                 {
                     pmbs = Mouse.LeftButton;
-                }
+                }*/
             }
             else if (gameState == GameState.play)
             {
                 //sw.Close();
+                for (int i = enemies.Count - 1; i > -1; i--)
+                {
+                    enemies[i].update(i);
+                }
             }
         }
 
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
             gameTimer.Tick += GameTimer_Tick;
-            gameTimer.Interval = new TimeSpan(0, 0, 0, 0, 1000 / 60);
+            gameTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
             gameTimer.Start();
 
             cBackground.Children.Remove(btnStart);
@@ -256,13 +195,16 @@ namespace hungaryTDv1
                 Canvas.SetLeft(towerIcons[i], 910);
                 cBackground.Children.Add(towerIcons[i]);
             }
-
+            gameState = GameState.play;
+            enemies.Add(new Enemy((int)EnemyType.hamburger, cEnemies, cBackground, track, positions));
+            enemies.Add(new Enemy((int)EnemyType.apple, cEnemies, cBackground, track, positions));
+            enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
+            enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
+            enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
         }
 
         private void TempTwrBtn_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
                 gameState = GameState.test;
                 /*sw = new StreamWriter("tankBox.txt");
                 sw.Close();*/
@@ -286,7 +228,8 @@ namespace hungaryTDv1
                 trackHit.Points = myPointCollection;
                 trackHit.Stroke = Brushes.Red;
                 trackHit.Fill = Brushes.Blue;
-                cObstacles.Children.Add(trackHit);
+                //cObstacles.Children.Add(trackHit);
+                cBackground.Children.Add(trackHit);
                 sr = new StreamReader("line1.txt");
                 myPointCollection = new PointCollection();
                 while (!sr.EndOfStream)
@@ -306,15 +249,10 @@ namespace hungaryTDv1
                 //test.Fill = Brushes.Blue;
                 cBackground.Children.Add(test);
                 sw = new StreamWriter("tankBox.txt");
-            }
-            catch
-            {
-                sw.Close();
-            }
+     
         }
         private void iconsClick(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("true");
             gameState = GameState.store;
             Button button = sender as Button;
             int towerType = -1;
@@ -344,6 +282,5 @@ namespace hungaryTDv1
             }
             cBackground.Children.Add(tempRect);
         }
-
     }
 }
