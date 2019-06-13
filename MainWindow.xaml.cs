@@ -73,11 +73,16 @@ namespace hungaryTDv1
         {
             if (gameState == GameState.store)
             {
-               // sw.Close();
                 Canvas.SetTop(tempRect, Mouse.GetPosition(cBackground).Y - tempRect.Height / 2);
                 Canvas.SetLeft(tempRect, Mouse.GetPosition(cBackground).X - tempRect.Width / 2);
                 bool valid = true;
-                if (cObstacles.InputHitTest(Mouse.GetPosition(cBackground)) == null)
+                double x = Mouse.GetPosition(cBackground).X;
+                double y = Mouse.GetPosition(cBackground).Y;
+                bool check1 = cObstacles.InputHitTest(new Point(x + tempRect.Width / 2, y + tempRect.Height / 2)) == null;
+                bool check2 = cObstacles.InputHitTest(new Point(x - tempRect.Width / 2, y + tempRect.Height / 2)) == null;
+                bool check3 = cObstacles.InputHitTest(new Point(x + tempRect.Width / 2, y - tempRect.Height / 2)) == null;
+                bool check4 = cObstacles.InputHitTest(new Point(x - tempRect.Width / 2, y - tempRect.Height / 2)) == null;
+                if (check1 && check2 && check3 && check4)
                 {
                     valid = true;
                     tempRect.Stroke = Brushes.Transparent;
@@ -89,20 +94,27 @@ namespace hungaryTDv1
                     tempRect.StrokeThickness = 5;
                 }
                 MouseButtonState pmbs = MouseButtonState.Released;
-                if (Mouse.LeftButton == MouseButtonState.Pressed && valid)
+                if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    Point temp = Mouse.GetPosition(cBackground);
-                    Rectangle tempRect2 = new Rectangle();
-                    tempRect2.Fill = tempRect.Fill;
-                    tempRect2.Width = tempRect.Width;
-                    tempRect2.Height = tempRect.Height;
-                    Canvas.SetTop(tempRect2, Canvas.GetTop(tempRect));
-                    Canvas.SetLeft(tempRect2, Canvas.GetLeft(tempRect));
-                    cBackground.Children.Remove(tempRect);
-                    cBackground.Children.Add(tempRect2);
-                    cObstacles.Children.Add(tempRect);
+                    if (valid)
+                    {
+                        Point temp = Mouse.GetPosition(cBackground);
+                        Rectangle tempRect2 = new Rectangle();
+                        tempRect2.Fill = tempRect.Fill;
+                        tempRect2.Width = tempRect.ActualWidth;
+                        tempRect2.Height = tempRect.ActualHeight;
+                        Canvas.SetTop(tempRect2, Canvas.GetTop(tempRect));
+                        Canvas.SetLeft(tempRect2, Canvas.GetLeft(tempRect));
+                        cBackground.Children.Remove(tempRect);
+                        cBackground.Children.Add(tempRect2);
+                        cObstacles.Children.Add(tempRect);
+                    }
+                    else
+                    {
+                        cBackground.Children.Remove(tempRect);
+                    }
+                    cObstacles.Children.Remove(trackHit);
                     gameState = GameState.play;
-
                 }
                 else
                 {
@@ -111,7 +123,8 @@ namespace hungaryTDv1
             }
             else if (gameState == GameState.test)
             {
-                /*MouseButtonState pmbs = MouseButtonState.Released;
+                /*
+                 * MouseButtonState pmbs = MouseButtonState.Released;
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
                     Point temp = Mouse.GetPosition(cBackground);
@@ -127,11 +140,11 @@ namespace hungaryTDv1
                 else
                 {
                     pmbs = Mouse.LeftButton;
-                }*/
+                }
+                */
             }
             else if (gameState == GameState.play)
             {
-                //sw.Close();
                 for (int i = enemies.Count - 1; i > -1; i--)
                 {
                     enemies[i].update(i);
@@ -142,8 +155,23 @@ namespace hungaryTDv1
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
             gameTimer.Tick += GameTimer_Tick;
-            gameTimer.Interval = new TimeSpan(0, 0, 0, 0, 10);
+            gameTimer.Interval = new TimeSpan(0, 0, 0, 0, 1000/60);
             gameTimer.Start();
+
+            sr = new StreamReader("trackBox.txt");
+            PointCollection myPointCollection = new PointCollection();
+            while (!sr.EndOfStream)
+            {
+                string currentLine = sr.ReadLine();
+                double xPosition, yPosition;
+                double.TryParse(currentLine.Split(',')[0], out xPosition);
+                double.TryParse(currentLine.Split(',')[1], out yPosition);
+                Point point = new Point(xPosition, yPosition);
+                myPointCollection.Add(point);
+            }
+            sr.Close();
+            trackHit.Points = myPointCollection;
+            trackHit.Fill = Brushes.Transparent;
 
             cBackground.Children.Remove(btnStart);
             background = new Rectangle();
@@ -152,22 +180,17 @@ namespace hungaryTDv1
             BitmapImage bi = new BitmapImage(new Uri("track.png", UriKind.Relative));
             ImageBrush img = new ImageBrush(bi);
             background.Fill = img;
-
-            lblMouseTest = new Label();
-            lblMouseTest.Height = 50;
-            lblMouseTest.Width = 70;
+            cBackground.Children.Add(background);
 
             tempTwrBtn = new Button();
             tempTwrBtn.Height = 20;
             tempTwrBtn.Width = 40;
             tempTwrBtn.Content = "test";
-
             tempTwrBtn.Click += TempTwrBtn_Click;
-
-            cBackground.Children.Add(background);
             Canvas.SetTop(tempTwrBtn, 17);
             Canvas.SetLeft(tempTwrBtn, 857);
             cBackground.Children.Add(tempTwrBtn);
+
             bi = new BitmapImage(new Uri("normal.png", UriKind.Relative));
             towerFill[0] = new ImageBrush(bi);
             bi = new BitmapImage(new Uri("police.png", UriKind.Relative));
@@ -178,13 +201,6 @@ namespace hungaryTDv1
             towerFill[3] = new ImageBrush(bi);
             for (int i = 0; i < towerIcons.Length; i++)
             {
-                Rectangle backDrop = new Rectangle();
-                backDrop.Height = 100;
-                backDrop.Width = 100;
-                backDrop.Fill = Brushes.Red;
-                Canvas.SetTop(backDrop, i * 150 + 50);
-                Canvas.SetLeft(backDrop, 900);
-                cBackground.Children.Add(backDrop);
                 towerIcons[i] = new Button();
                 towerIcons[i].Background = towerFill[i];
                 towerIcons[i].Height = 80;
@@ -206,54 +222,12 @@ namespace hungaryTDv1
         private void TempTwrBtn_Click(object sender, RoutedEventArgs e)
         {
                 gameState = GameState.test;
-                /*sw = new StreamWriter("tankBox.txt");
-                sw.Close();*/
-                StreamReader sr = new StreamReader("tankBox.txt");
-                List<Point> points = new List<Point>();
-                while (!sr.EndOfStream)
-                {
-                    string currentLine = sr.ReadLine();
-                    double xPosition, yPosition;
-                    double.TryParse(currentLine.Split(',')[0], out xPosition);
-                    double.TryParse(currentLine.Split(',')[1], out yPosition);
-                    Point point = new Point(xPosition, yPosition);
-                    points.Add(point);
-                }
-                sr.Close();
-                PointCollection myPointCollection = new PointCollection();
-                for (int i = 0; i < points.Count; i++)
-                {
-                    myPointCollection.Add(points[i]);
-                }
-                trackHit.Points = myPointCollection;
-                trackHit.Stroke = Brushes.Red;
-                trackHit.Fill = Brushes.Blue;
-                //cObstacles.Children.Add(trackHit);
-                cBackground.Children.Add(trackHit);
-                sr = new StreamReader("line1.txt");
-                myPointCollection = new PointCollection();
-                while (!sr.EndOfStream)
-                {
-                    string currentLine = sr.ReadLine();
-                    double xPosition, yPosition;
-                    double.TryParse(currentLine.Split(',')[0], out xPosition);
-                    double.TryParse(currentLine.Split(',')[1], out yPosition);
-                    Point point = new Point(xPosition, yPosition);
-                    myPointCollection.Add(point);
-                }
-                sr.Close();
-                Polyline test = new Polyline();
-                test.Points = myPointCollection;
-                test.Stroke = Brushes.Red;
-                test.StrokeThickness = 3;
-                //test.Fill = Brushes.Blue;
-                cBackground.Children.Add(test);
-                sw = new StreamWriter("tankBox.txt");
-     
         }
         private void iconsClick(object sender, RoutedEventArgs e)
         {
+            //sw.Close();
             gameState = GameState.store;
+            cObstacles.Children.Add(trackHit);
             Button button = sender as Button;
             int towerType = -1;
             for (int i = 0; i < towerIcons.Length; i++)

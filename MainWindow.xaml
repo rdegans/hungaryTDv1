@@ -9,7 +9,6 @@
     <Canvas x:Name="cBackground">
         <Canvas x:Name="cEnemies">
             <Canvas x:Name="cObstacles">
-
             </Canvas>
         </Canvas>
     </Canvas>
