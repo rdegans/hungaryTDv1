@@ -24,11 +24,15 @@ namespace hungaryTDv1
         public Label lblMouseTest;
         public Button tempTwrBtn;
         public Rectangle tempRect;
+        public Rectangle healthBar = new Rectangle();
+        public Rectangle damageBar = new Rectangle();
+        public Label lblHealth = new Label();
+        public Label lblMoney = new Label();
         public bool mouseTest;
         public Button[] towerIcons = new Button[4];
-        Button btnStart = new Button();
+        public Button btnStart = new Button();
         public ImageBrush[] towerFill = new ImageBrush[4];
-        System.Windows.Threading.DispatcherTimer gameTimer = new System.Windows.Threading.DispatcherTimer();
+        public System.Windows.Threading.DispatcherTimer gameTimer = new System.Windows.Threading.DispatcherTimer();
         public GameState gameState;
         public enum GameState {play, store, test};
         public TowerType towerType;
@@ -39,11 +43,16 @@ namespace hungaryTDv1
         public Polygon trackHit = new Polygon();
         public Point[] track = new Point[1450];
         public int[] positions = new int[1450];
-        StreamWriter sw;
-        StreamReader sr;
+        public StreamWriter sw;
+        public StreamReader sr;
+        public int tempTowerType;
+        public int tempCost;
+        public int money = 300;
+        public List<Tower> towers = new List<Tower>();
         public MainWindow()
         {
             InitializeComponent();
+
             btnStart.Height = 20;
             btnStart.Width = 70;
             btnStart.Content = "start";
@@ -96,18 +105,13 @@ namespace hungaryTDv1
                 MouseButtonState pmbs = MouseButtonState.Released;
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    if (valid)
+                    if (valid && tempCost <= money)
                     {
                         Point temp = Mouse.GetPosition(cBackground);
-                        Rectangle tempRect2 = new Rectangle();
-                        tempRect2.Fill = tempRect.Fill;
-                        tempRect2.Width = tempRect.ActualWidth;
-                        tempRect2.Height = tempRect.ActualHeight;
-                        Canvas.SetTop(tempRect2, Canvas.GetTop(tempRect));
-                        Canvas.SetLeft(tempRect2, Canvas.GetLeft(tempRect));
                         cBackground.Children.Remove(tempRect);
-                        cBackground.Children.Add(tempRect2);
-                        cObstacles.Children.Add(tempRect);
+                        towers.Add(new Tower(tempTowerType, cBackground, cObstacles, positions, track));
+                        money -= tempCost;
+                        lblMoney.Content = "$ " + money;
                     }
                     else
                     {
@@ -188,7 +192,7 @@ namespace hungaryTDv1
             tempTwrBtn.Content = "test";
             tempTwrBtn.Click += TempTwrBtn_Click;
             Canvas.SetTop(tempTwrBtn, 17);
-            Canvas.SetLeft(tempTwrBtn, 857);
+            Canvas.SetLeft(tempTwrBtn, 1000);
             cBackground.Children.Add(tempTwrBtn);
 
             bi = new BitmapImage(new Uri("normal.png", UriKind.Relative));
@@ -217,6 +221,45 @@ namespace hungaryTDv1
             enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
             enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
             enemies.Add(new Enemy((int)EnemyType.pizza, cEnemies, cBackground, track, positions));
+
+            healthBar.Height = 25;
+            healthBar.Width = 250;
+            healthBar.Fill = Brushes.Green;
+            healthBar.Stroke = Brushes.Black;
+            Canvas.SetTop(healthBar, 85);
+            Canvas.SetLeft(healthBar, 575);
+            cBackground.Children.Add(healthBar);
+
+            damageBar.Height = 0;
+            damageBar.Width = 0;
+            damageBar.Fill = Brushes.SpringGreen;
+            damageBar.Stroke = Brushes.Black;
+            Canvas.SetTop(damageBar, 85);
+            Canvas.SetLeft(damageBar, 575);
+            cBackground.Children.Add(damageBar);
+
+            lblHealth.Foreground = Brushes.Black;
+            lblHealth.Content = "Health";
+            lblHealth.FontWeight = FontWeights.UltraBold;
+            lblHealth.FontFamily = new FontFamily("Consola");
+            lblHealth.FontSize = 20;
+            lblHealth.Height = 50;
+            lblHealth.Width = 250;
+            Canvas.SetTop(lblHealth, 80);
+            Canvas.SetLeft(lblHealth, 575);
+            cBackground.Children.Add(lblHealth);
+
+            lblMoney.Foreground = Brushes.Gold;
+            lblMoney.Content = "Health";
+            lblMoney.FontWeight = FontWeights.UltraBold;
+            lblMoney.FontFamily = new FontFamily("Consola");
+            lblMoney.FontSize = 30;
+            lblMoney.Height = 50;
+            lblMoney.Width = 100;
+            Canvas.SetTop(lblMoney, 10);
+            Canvas.SetLeft(lblMoney, 875);
+            lblMoney.Content = "$ " + money;
+            cBackground.Children.Add(lblMoney);
         }
 
         private void TempTwrBtn_Click(object sender, RoutedEventArgs e)
@@ -229,30 +272,32 @@ namespace hungaryTDv1
             gameState = GameState.store;
             cObstacles.Children.Add(trackHit);
             Button button = sender as Button;
-            int towerType = -1;
             for (int i = 0; i < towerIcons.Length; i++)
             {
                 if (towerIcons[i] == button)
                 {
-                    towerType = i;
+                    tempTowerType = i;
                 }
             }
             tempRect = new Rectangle();
-            tempRect.Fill = towerFill[towerType];
-            if (towerType < 2)
+            tempRect.Fill = towerFill[tempTowerType];
+            if (tempTowerType < 2)
             {
                 tempRect.Height = 35;
                 tempRect.Width = 35;
+                tempCost = 100;
             }
-            else if (towerType == 2)
+            else if (tempTowerType == 2)
             {
                 tempRect.Height = 45;
                 tempRect.Width = 70;
+                tempCost = 100;
             }
             else
             {
                 tempRect.Height = 70;
                 tempRect.Width = 70;
+                tempCost = 100;
             }
             cBackground.Children.Add(tempRect);
         }
