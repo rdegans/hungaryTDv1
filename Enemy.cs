@@ -1,4 +1,9 @@
-﻿using System;
+﻿/*
+ * Name: Riley, Peter and Quinn
+ * Date: June 18th, 2019
+ * Description: A tower defense game where you try to eat angry food to protect a sacred fridge
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
